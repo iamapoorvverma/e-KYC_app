@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+
+{% block title %}Aadhaar Upload - E-KYC{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-container {
+        width: 100%;
+        height: 200px;
+        border: 2px dashed #ccc;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .preview-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    .hidden {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h2 class="mb-4">Upload Aadhaar Card</h2>
+        <p class="mb-4">Please upload both front and back sides of your Aadhaar card.</p>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Front Side</h4>
+                        <p>Upload the front side of your Aadhaar card containing your photo, name, and date of birth.</p>
+                        <input type="file" id="front-file" class="form-control" accept="image/*">
+                        <div class="preview-container" id="front-preview">
+                            <span class="text-muted">Preview will appear here</span>
+                        </div>
+                        <div class="mt-3">
+                            <button id="upload-front-btn" class="btn btn-primary">Upload Front Side</button>
+                        </div>
+                        <div id="front-result" class="mt-3 hidden">
+                            <div class="alert alert-success">
+                                <h5>Extracted Information:</h5>
+                                <ul>
+                                    <li><strong>Name:</strong> <span id="extracted-name"></span></li>
+                                    <li><strong>Date of Birth:</strong> <span id="extracted-dob"></span></li>
+                                    <li><strong>Gender:</strong> <span id="extracted-gender"></span></li>
+                                    <li><strong>Aadhaar Number:</strong> <span id="extracted-aadhaar"></span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Back Side</h4>
+                        <p>Upload the back side of your Aadhaar card containing your address.</p>
+                        <input type="file" id="back-file" class="form-control" accept="image/*">
+                        <div class="preview-container" id="back-preview">
+                            <span class="text-muted">Preview will appear here</span>
+                        </div>
+                        <div class="mt-3">
+                            <button id="upload-back-btn" class="btn btn-primary">Upload Back Side</button>
+                        </div>
+                        <div id="back-result" class="mt-3 hidden">
+                            <div class="alert alert-success">
+                                <h5>Extracted Information:</h5>
+                                <ul>
+                                    <li><strong>Address:</strong> <span id="extracted-address"></span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4" id="selfie-section" style="display: none;">
+            <div class="card-body">
+                <h4>Take Selfie</h4>
+                <p>Please take a selfie for face verification. Make sure your face is clearly visible.</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div id="webcam-container">
+                            <video id="webcam" autoplay playsinline width="100%" height="auto"></video>
+                        </div>
+                        <div class="mt-3">
+                            <button id="capture-btn" class="btn btn-primary">Capture Selfie</button>
+                            <button id="initialize-webcam-btn" class="btn btn-secondary">Initialize Camera</button>
+                        </div>
+                        <div id="webcam-error" class="mt-2 text-danger" style="display: none;"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="preview-container" id="selfie-preview">
+                            <span class="text-muted">Preview will appear here</span>
+                        </div>
+                        <div class="mt-3">
+                            <button id="retake-btn" class="btn btn-secondary" style="display: none;">Retake</button>
+                            <button id="submit-selfie-btn" class="btn btn-success" style="display: none;">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4" id="result-section" style="display: none;">
+            <div class="card-body text-center">
+                <h3 id="verification-result-title"></h3>
+                <div id="verification-success" style="display: none;">
+                    <div class="alert alert-success">
+                        <p class="lead">Your identity has been successfully verified!</p>
+                        <p>Confidence Score: <span id="confidence-score"></span>%</p>
+                    </div>
+                </div>
+                <div id="verification-failure" style="display: none;">
+                    <div class="alert alert-danger">
+                        <p class="lead">Verification failed!</p>
+                        <p>The face in the selfie does not match with the document.</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="/" class="btn btn-primary">Back to Home</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a href="/user" class="btn btn-secondary">Back to Document Selection</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let frontFilePath = null;
+    let backFilePath = null;
+    let selfieBlob = null;
+    let extractedData = {
+        name: '',
+        dob: '',
+        gender: '',
+        aadhaar_number: '',
+        address: ''
+    };
+    let videoStream = null;
+    let canvas = document.createElement('canvas');
+    
+    // Preview uploaded images
+    document.getElementById('front-file').addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('front-preview');
+                preview.innerHTML = `<img src="${e.target.result}" alt="Front Preview">`;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    document.getElementById('back-file').addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('back-preview');
+                preview.innerHTML = `<img src="${e.target.result}" alt="Back Preview">`;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Upload front side
+    document.getElementById('upload-front-btn').addEventListener('click', function() {
+        const fileInput = document.getElementById('front-file');
+        if (!fileInput.files.length) {
+            alert('Please select a file');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        // Show loading state
+        this.disabled = true;
+        this.innerHTML = 'Uploading...';
+        
+        fetch('/api/upload-aadhaar-front', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            this.disabled = false;
+            this.innerHTML = 'Upload Front Side';
+            
+            if (!data.success) {
+                alert(data.message || 'Failed to process document');
+                return;
+            }
+            
+            frontFilePath = data.file_path;
+            const extractedInfo = data.extracted_data;
+            
+            // Display extracted information
+            document.getElementById('extracted-name').textContent = extractedInfo.name || 'Not found';
+            document.getElementById('extracted-dob').textContent = extractedInfo.dob || 'Not found';
+            document.getElementById('extracted-gender').textContent = extractedInfo.gender || 'Not found';
+            document.getElementById('extracted-aadhaar').textContent = extractedInfo.aadhaar_number || 'Not found';
+            document.getElementById('front-result').classList.remove('hidden');
+            
+            // Store extracted data
+            extractedData.name = extractedInfo.name || '';
+            extractedData.dob = extractedInfo.dob || '';
+            extractedData.gender = extractedInfo.gender || '';
+            extractedData.aadhaar_number = extractedInfo.aadhaar_number || '';
+            
+            // Check if both sides are uploaded
+            checkBothSidesUploaded();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            this.disabled = false;
+            this.innerHTML = 'Upload Front Side';
+            alert('Error uploading document');
+        });
+    });
+    
+    // Upload back side
+    document.getElementById('upload-back-btn').addEventListener('click', function() {
+        const fileInput = document.getElementById('back-file');
+        if (!fileInput.files.length) {
+            alert('Please select a file');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        // Show loading state
+        this.disabled = true;
+        this.innerHTML = 'Uploading...';
+        
+        fetch('/api/upload-aadhaar-back', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            this.disabled = false;
+            this.innerHTML = 'Upload Back Side';
+            
+            if (!data.success) {
+                alert('Failed to process document');
+                return;
+            }
+            
+            backFilePath = data.file_path;
+            const extractedInfo = data.extracted_data;
+            
+            // Display extracted information
+            document.getElementById('extracted-address').textContent = extractedInfo.address || 'Not found';
+            document.getElementById('back-result').classList.remove('hidden');
+            
+            // Store extracted data
+            extractedData.address = extractedInfo.address || '';
+            
+            // Check if both sides are uploaded
+            checkBothSidesUploaded();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            this.disabled = false;
+            this.innerHTML = 'Upload Back Side';
+            alert('Error uploading document');
+        });
+    });
+    
+    // Check if both sides are uploaded to show selfie section
+    function checkBothSidesUploaded() {
+        if (frontFilePath && backFilePath) {
+            // Show selfie section
+            document.getElementById('selfie-section').style.display = 'block';
+            // Initialize webcam
+            initWebcam();
+        }
+    }
+    
+    // Initialize webcam
+    function initWebcam() {
+        const video = document.getElementById('webcam');
+        const errorElement = document.getElementById('webcam-error');
+        
+        // Clear previous error messages
+        if (errorElement) {
+            errorElement.style.display = 'none';
+            errorElement.textContent = '';
+        }
+        
+        // Check if browser supports getUserMedia
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('Browser API navigator.mediaDevices.getUserMedia not available');
+            showWebcamError('Your browser does not support camera access. Please try a different browser like Chrome or Firefox.');
+            return;
+        }
+        
+        // Stop any existing stream
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Set constraints - prefer front camera for selfies
+        const constraints = {
+            video: {
+                facingMode: 'user', 
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            }
+        };
+        
+        // Request camera access
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(stream) {
+                videoStream = stream;
+                
+                // Check if video element exists
+                if (!video) {
+                    console.error('Video element not found');
+                    showWebcamError('Video element not found. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Attach stream to video element
+                video.srcObject = stream;
+                
+                // Handle video playback events
+                video.onloadedmetadata = function(e) {
+                    console.log('Video metadata loaded');
+                    video.play()
+                        .catch(err => {
+                            console.error('Error playing video:', err);
+                            showWebcamError('Error starting video: ' + err.message);
+                        });
+                };
+                
+                console.log('Camera initialized successfully');
+            })
+            .catch(function(error) {
+                console.error('Error accessing webcam:', error);
+                let errorMessage = 'Error accessing webcam. ';
+                
+                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    errorMessage += 'Please allow camera access in your browser settings.';
+                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    errorMessage += 'No camera detected. Please connect a camera and try again.';
+                } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                    errorMessage += 'Camera is already in use by another application.';
+                } else {
+                    errorMessage += 'Please check your camera connection and browser permissions.';
+                }
+                
+                showWebcamError(errorMessage);
+            });
+    }
+    
+    // Show webcam error
+    function showWebcamError(message) {
+        const errorElement = document.getElementById('webcam-error');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        alert(message);
+    }
+    
+    // Manual webcam initialization button
+    document.getElementById('initialize-webcam-btn').addEventListener('click', function() {
+        initWebcam();
+    });
+    
+    // Capture selfie
+    document.getElementById('capture-btn').addEventListener('click', function() {
+        const video = document.getElementById('webcam');
+        const preview = document.getElementById('selfie-preview');
+        
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw video frame to canvas
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to blob
+        canvas.toBlob(function(blob) {
+            selfieBlob = blob;
+            
+            // Display preview
+            const imgUrl = URL.createObjectURL(blob);
+            preview.innerHTML = `<img src="${imgUrl}" alt="Selfie Preview">`;
+            
+            // Show/hide buttons
+            document.getElementById('capture-btn').style.display = 'none';
+            document.getElementById('retake-btn').style.display = 'inline-block';
+            document.getElementById('submit-selfie-btn').style.display = 'inline-block';
+        }, 'image/jpeg');
+    });
+    
+    // Retake selfie
+    document.getElementById('retake-btn').addEventListener('click', function() {
+        const preview = document.getElementById('selfie-preview');
+        preview.innerHTML = `<span class="text-muted">Preview will appear here</span>`;
+        
+        // Show/hide buttons
+        document.getElementById('capture-btn').style.display = 'inline-block';
+        document.getElementById('retake-btn').style.display = 'none';
+        document.getElementById('submit-selfie-btn').style.display = 'none';
+        
+        // Reset selfie blob
+        selfieBlob = null;
+    });
+    
+    // Submit selfie
+    document.getElementById('submit-selfie-btn').addEventListener('click', function() {
+        if (!selfieBlob) {
+            alert('Please capture a selfie first');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', selfieBlob, 'selfie.jpg');
+        formData.append('doc_path', frontFilePath);
+        formData.append('doc_type', 'aadhaar');
+        formData.append('doc_front_path', frontFilePath);
+        formData.append('doc_back_path', backFilePath);
+        formData.append('name', extractedData.name);
+        formData.append('dob', extractedData.dob);
+        formData.append('gender', extractedData.gender);
+        formData.append('address', extractedData.address);
+        formData.append('aadhaar_number', extractedData.aadhaar_number);
+        
+        // Show loading state
+        this.disabled = true;
+        this.innerHTML = 'Processing...';
+        
+        fetch('/api/upload-selfie', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            this.disabled = false;
+            this.innerHTML = 'Submit';
+            
+            // Close webcam stream
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Show result section
+            document.getElementById('selfie-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+            
+            // Display verification result
+            if (data.is_verified) {
+                document.getElementById('verification-result-title').textContent = 'Verification Successful';
+                document.getElementById('verification-success').style.display = 'block';
+                document.getElementById('confidence-score').textContent = Math.round(data.confidence_score * 100);
+            } else {
+                document.getElementById('verification-result-title').textContent = 'Verification Failed';
+                document.getElementById('verification-failure').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            this.disabled = false;
+            this.innerHTML = 'Submit';
+            alert('Error processing verification');
+        });
+    });
+</script>
+{% endblock %} 

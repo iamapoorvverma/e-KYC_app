@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - E-KYC{% endblock %}
+
+{% block nav_items %}
+<li class="nav-item">
+    <a class="nav-link active" href="/admin/dashboard">Dashboard</a>
+</li>
+{% if admin_role == 'superadmin' or admin_role == 'admin' %}
+<li class="nav-item">
+    <a class="nav-link" href="/admin/users">Users</a>
+</li>
+{% endif %}
+<li class="nav-item">
+    <a class="nav-link" href="#" id="logout-link">Logout</a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Admin Dashboard</h2>
+        <p class="lead">Manage and view KYC verification records</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Verifications</h5>
+                <p class="display-4" id="total-count">0</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">Verified</h5>
+                <p class="display-4" id="verified-count">0</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body text-center">
+                <h5 class="card-title">Failed</h5>
+                <p class="display-4" id="failed-count">0</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Aadhaar/PAN</h5>
+                <p class="display-4"><span id="aadhaar-count">0</span>/<span id="pan-count">0</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Search Records</h4>
+            </div>
+            <div class="card-body">
+                <form id="search-form" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="name-search" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name-search" placeholder="Search by name">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="aadhaar-search" class="form-label">Aadhaar Number</label>
+                        <input type="text" class="form-control" id="aadhaar-search" placeholder="Search by Aadhaar number">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="pan-search" class="form-label">PAN Number</label>
+                        <input type="text" class="form-control" id="pan-search" placeholder="Search by PAN number">
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                        <button type="button" id="reset-search" class="btn btn-secondary">Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">KYC Records</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Document Type</th>
+                                <th>Document Number</th>
+                                <th>Verification Status</th>
+                                <th>Match Score</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-table-body">
+                            <!-- Records will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="no-records-message" class="text-center py-4" style="display: none;">
+                    <p class="text-muted">No records found.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Record Details Modal -->
+<div class="modal fade" id="recordModal" tabindex="-1" aria-labelledby="recordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recordModalLabel">Record Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Personal Information</h6>
+                        <ul class="list-group mb-3">
+                            <li class="list-group-item"><strong>Name:</strong> <span id="modal-name"></span></li>
+                            <li class="list-group-item"><strong>Date of Birth:</strong> <span id="modal-dob"></span></li>
+                            <li class="list-group-item"><strong>Gender:</strong> <span id="modal-gender"></span></li>
+                        </ul>
+                        
+                        <h6>Document Information</h6>
+                        <ul class="list-group mb-3">
+                            <li class="list-group-item"><strong>Document Type:</strong> <span id="modal-doc-type"></span></li>
+                            <li class="list-group-item" id="modal-aadhaar-container"><strong>Aadhaar Number:</strong> <span id="modal-aadhaar"></span></li>
+                            <li class="list-group-item" id="modal-pan-container"><strong>PAN Number:</strong> <span id="modal-pan"></span></li>
+                            <li class="list-group-item" id="modal-address-container"><strong>Address:</strong> <span id="modal-address"></span></li>
+                        </ul>
+                        
+                        <h6>Verification Information</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Verification Status:</strong> <span id="modal-verification"></span></li>
+                            <li class="list-group-item"><strong>Match Score:</strong> <span id="modal-score"></span></li>
+                            <li class="list-group-item"><strong>Verification Date:</strong> <span id="modal-date"></span></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Document Images</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Document Front</label>
+                            <div class="border p-2">
+                                <img id="modal-doc-front" src="" alt="Document Front" class="img-fluid">
+                            </div>
+                        </div>
+                        <div class="mb-3" id="modal-doc-back-container">
+                            <label class="form-label">Document Back</label>
+                            <div class="border p-2">
+                                <img id="modal-doc-back" src="" alt="Document Back" class="img-fluid">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Selfie</label>
+                            <div class="border p-2">
+                                <img id="modal-selfie" src="" alt="Selfie" class="img-fluid">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="modal-close-btn" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Check authentication status
+    function checkAuth() {
+        fetch('/api/admin/auth-status')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.logged_in) {
+                    window.location.href = '/admin';
+                }
+            })
+            .catch(error => {
+                console.error('Auth Error:', error);
+                window.location.href = '/admin';
+            });
+    }
+    
+    // Logout function
+    document.getElementById('logout-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        fetch('/api/admin/logout', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/';
+            }
+        })
+        .catch(error => {
+            console.error('Logout Error:', error);
+        });
+    });
+    
+    // Load dashboard data
+    function loadDashboardData() {
+        fetch('/api/admin/dashboard')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-count').textContent = data.total_verifications;
+                document.getElementById('verified-count').textContent = data.verified_count;
+                document.getElementById('failed-count').textContent = data.failed_count;
+                document.getElementById('aadhaar-count').textContent = data.aadhaar_count;
+                document.getElementById('pan-count').textContent = data.pan_count;
+            })
+            .catch(error => {
+                console.error('Dashboard Error:', error);
+            });
+    }
+    
+    // Load KYC records
+    function loadRecords(searchParams = {}) {
+        let url = '/api/verifications';
+        
+        // Add search parameters
+        if (Object.keys(searchParams).length > 0) {
+            const queryParams = new URLSearchParams();
+            if (searchParams.name) queryParams.append('name', searchParams.name);
+            if (searchParams.aadhaar) queryParams.append('aadhaar', searchParams.aadhaar);
+            if (searchParams.pan) queryParams.append('pan', searchParams.pan);
+            url = `/api/search?${queryParams.toString()}`;
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('records-table-body');
+                const noRecordsMessage = document.getElementById('no-records-message');
+                
+                // Clear table
+                tableBody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    noRecordsMessage.style.display = 'block';
+                } else {
+                    noRecordsMessage.style.display = 'none';
+                    
+                    // Populate table
+                    data.forEach(record => {
+                        const row = document.createElement('tr');
+                        
+                        // Get document number (Aadhaar or PAN)
+                        const docNumber = record.document_type === 'aadhaar' ? 
+                            record.aadhaar_number : record.pan_number;
+                        
+                        // Format document type
+                        const docType = record.document_type === 'aadhaar' ? 
+                            'Aadhaar Card' : 'PAN Card';
+                        
+                        // Format verification status
+                        const verificationStatus = record.is_verified ? 
+                            '<span class="badge bg-success">Verified</span>' : 
+                            '<span class="badge bg-danger">Failed</span>';
+                        
+                        // Format match score
+                        const matchScore = record.face_match_score ? 
+                            `${Math.round(record.face_match_score * 100)}%` : 'N/A';
+                        
+                        // Format date
+                        const date = new Date(record.created_at).toLocaleDateString();
+                        
+                        row.innerHTML = `
+                            <td>${record.id}</td>
+                            <td>${record.name || 'N/A'}</td>
+                            <td>${docType}</td>
+                            <td>${docNumber || 'N/A'}</td>
+                            <td>${verificationStatus}</td>
+                            <td>${matchScore}</td>
+                            <td>${date}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary view-record" data-record-id="${record.id}">View</button>
+                            </td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                    
+                    // Add event listeners to view buttons - do this after all rows are added
+                    attachViewButtonListeners();
+                }
+            })
+            .catch(error => {
+                console.error('Records Error:', error);
+            });
+    }
+    
+    // Attach event listeners to view buttons
+    function attachViewButtonListeners() {
+        const viewButtons = document.querySelectorAll('.view-record');
+        console.log('Found view buttons:', viewButtons.length);
+        
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const recordId = this.getAttribute('data-record-id');
+                console.log('View button clicked for record ID:', recordId);
+                viewRecord(recordId);
+            });
+        });
+    }
+    
+    // View record details
+    function viewRecord(id) {
+        console.log('Fetching record details for ID:', id);
+        
+        fetch(`/api/verifications/${id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(record => {
+                console.log('Record data received:', record);
+                
+                // Populate modal with record details
+                document.getElementById('modal-name').textContent = record.name || 'N/A';
+                document.getElementById('modal-dob').textContent = record.dob || 'N/A';
+                document.getElementById('modal-gender').textContent = record.gender || 'N/A';
+                
+                document.getElementById('modal-doc-type').textContent = 
+                    record.document_type === 'aadhaar' ? 'Aadhaar Card' : 'PAN Card';
+                
+                // Show/hide Aadhaar/PAN specific fields
+                if (record.document_type === 'aadhaar') {
+                    document.getElementById('modal-aadhaar-container').style.display = 'block';
+                    document.getElementById('modal-pan-container').style.display = 'none';
+                    document.getElementById('modal-address-container').style.display = 'block';
+                    document.getElementById('modal-doc-back-container').style.display = 'block';
+                    
+                    document.getElementById('modal-aadhaar').textContent = record.aadhaar_number || 'N/A';
+                    document.getElementById('modal-address').textContent = record.address || 'N/A';
+                } else {
+                    document.getElementById('modal-aadhaar-container').style.display = 'none';
+                    document.getElementById('modal-pan-container').style.display = 'block';
+                    document.getElementById('modal-address-container').style.display = 'none';
+                    document.getElementById('modal-doc-back-container').style.display = 'none';
+                    
+                    document.getElementById('modal-pan').textContent = record.pan_number || 'N/A';
+                }
+                
+                // Verification info
+                document.getElementById('modal-verification').textContent = 
+                    record.is_verified ? 'Verified' : 'Failed';
+                document.getElementById('modal-verification').className = 
+                    record.is_verified ? 'text-success' : 'text-danger';
+                
+                document.getElementById('modal-score').textContent = 
+                    record.face_match_score ? `${Math.round(record.face_match_score * 100)}%` : 'N/A';
+                
+                document.getElementById('modal-date').textContent = 
+                    new Date(record.created_at).toLocaleString();
+                
+                // Get file paths for images and print them to console for debugging
+                console.log('Document front path:', record.doc_front_path);
+                console.log('Document back path:', record.doc_back_path);
+                console.log('Selfie path:', record.selfie_path);
+                
+                // Set image sources directly without any path manipulation
+                if (record.doc_front_path) {
+                    // Extract the filename from the full path and construct the correct URL
+                    const docFrontFilename = record.doc_front_path.split('/').pop();
+                    const docFrontType = record.document_type === 'aadhaar' ? 'aadhaar' : 'pan';
+                    document.getElementById('modal-doc-front').src = `/static/uploads/${docFrontType}/${docFrontFilename}`;
+                    console.log('Front image src set to:', document.getElementById('modal-doc-front').src);
+                } else {
+                    document.getElementById('modal-doc-front').src = '';
+                    document.getElementById('modal-doc-front').alt = 'No document front image available';
+                }
+                
+                if (record.doc_back_path) {
+                    // Extract the filename from the full path and construct the correct URL
+                    const docBackFilename = record.doc_back_path.split('/').pop();
+                    document.getElementById('modal-doc-back').src = `/static/uploads/aadhaar/${docBackFilename}`;
+                    console.log('Back image src set to:', document.getElementById('modal-doc-back').src);
+                } else {
+                    document.getElementById('modal-doc-back').src = '';
+                    document.getElementById('modal-doc-back').alt = 'No document back image available';
+                }
+                
+                if (record.selfie_path) {
+                    // Extract the filename from the full path and construct the correct URL
+                    const selfieFilename = record.selfie_path.split('/').pop();
+                    document.getElementById('modal-selfie').src = `/static/uploads/selfies/${selfieFilename}`;
+                    console.log('Selfie image src set to:', document.getElementById('modal-selfie').src);
+                } else {
+                    document.getElementById('modal-selfie').src = '';
+                    document.getElementById('modal-selfie').alt = 'No selfie image available';
+                }
+                
+                // Show modal
+                let existingModal = bootstrap.Modal.getInstance(document.getElementById('recordModal'));
+                if (existingModal) {
+                    existingModal.dispose();
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('recordModal'), {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Record Details Error:', error);
+                alert('Error fetching record details: ' + error.message);
+            });
+    }
+    
+    // Search form handling
+    document.getElementById('search-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const searchParams = {
+            name: document.getElementById('name-search').value,
+            aadhaar: document.getElementById('aadhaar-search').value,
+            pan: document.getElementById('pan-search').value
+        };
+        
+        loadRecords(searchParams);
+    });
+    
+    // Reset search
+    document.getElementById('reset-search').addEventListener('click', function() {
+        document.getElementById('name-search').value = '';
+        document.getElementById('aadhaar-search').value = '';
+        document.getElementById('pan-search').value = '';
+        
+        loadRecords();
+    });
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        checkAuth();
+        loadDashboardData();
+        loadRecords();
+        
+        // Debug: Show cookies in console
+        console.log("Cookies:", document.cookie);
+        
+        // Add global event delegation for view buttons
+        document.getElementById('records-table-body').addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('view-record')) {
+                const recordId = e.target.getAttribute('data-record-id');
+                if (recordId) {
+                    console.log('View button clicked through delegation for record ID:', recordId);
+                    viewRecord(recordId);
+                }
+            }
+        });
+        
+        // Fix for modal backdrop not being removed
+        const recordModal = document.getElementById('recordModal');
+        recordModal.addEventListener('hidden.bs.modal', function () {
+            // Check if any modal backdrops remain and remove them
+            const modalBackdrops = document.querySelectorAll('.modal-backdrop');
+            if (modalBackdrops.length > 0) {
+                modalBackdrops.forEach(backdrop => {
+                    backdrop.remove();
+                });
+            }
+            // Remove modal-open class from body to restore scrolling
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        });
+        
+        // Ensure close button properly closes the modal
+        document.getElementById('modal-close-btn').addEventListener('click', function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('recordModal'));
+            if (modal) {
+                modal.hide();
+            }
+        });
+    });
+</script>
+{% endblock %} 

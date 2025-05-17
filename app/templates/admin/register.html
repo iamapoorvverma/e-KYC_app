@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Registration - E-KYC{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Register New Admin</h4>
+            </div>
+            <div class="card-body">
+                <form id="register-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="staff">Staff</option>
+                            <option value="admin">Admin</option>
+                            <option value="superadmin">Super Admin</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-danger" id="register-error" style="display: none;"></div>
+                    <div class="alert alert-success" id="register-success" style="display: none;"></div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Register</button>
+                        <a href="/admin/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Check authentication status
+    function checkAuth() {
+        fetch('/api/admin/auth-status')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.logged_in) {
+                    window.location.href = '/admin';
+                } else if (data.role !== 'superadmin' && data.role !== 'admin') {
+                    window.location.href = '/admin/dashboard';
+                }
+            })
+            .catch(error => {
+                console.error('Auth Error:', error);
+                window.location.href = '/admin';
+            });
+    }
+    
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        const role = document.getElementById('role').value;
+        
+        // Validate passwords match
+        if (password !== confirmPassword) {
+            const errorDiv = document.getElementById('register-error');
+            errorDiv.textContent = 'Passwords do not match';
+            errorDiv.style.display = 'block';
+            document.getElementById('register-success').style.display = 'none';
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('role', role);
+        
+        fetch('/api/admin/register', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const successDiv = document.getElementById('register-success');
+                successDiv.textContent = 'Admin user registered successfully';
+                successDiv.style.display = 'block';
+                document.getElementById('register-error').style.display = 'none';
+                document.getElementById('register-form').reset();
+            } else {
+                const errorDiv = document.getElementById('register-error');
+                errorDiv.textContent = data.detail || 'Registration failed';
+                errorDiv.style.display = 'block';
+                document.getElementById('register-success').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const errorDiv = document.getElementById('register-error');
+            errorDiv.textContent = 'An error occurred. Please try again.';
+            errorDiv.style.display = 'block';
+            document.getElementById('register-success').style.display = 'none';
+        });
+    });
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        checkAuth();
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,42 @@
+# Environment variables
+.env
+
+# Database
+*.db
+ekyc.db
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# User uploaded files
+app/static/uploads/aadhaar/*
+app/static/uploads/pan/*
+app/static/uploads/selfies/*
+!app/static/uploads/aadhaar/.gitkeep
+!app/static/uploads/pan/.gitkeep
+!app/static/uploads/selfies/.gitkeep
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log 

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Select Document - E-KYC{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-primary">Select Your ID Document</h1>
+                <p class="lead text-muted">Choose the type of identity document you wish to verify</p>
+                <hr class="my-4 w-50 mx-auto">
+            </div>
+            
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card h-100 shadow-lg border-0 rounded-3 hover-effect">
+                        <div class="card-header bg-primary text-white text-center py-3">
+                            <h3 class="mb-0">Aadhaar Card</h3>
+                        </div>
+                        <div class="card-body d-flex flex-column text-center p-4">
+                            <div class="mb-4">
+                                <img src="/static/images/aadhaar-icon.svg" alt="Aadhaar Icon" class="img-fluid mb-3" style="max-height: 100px;" onerror="this.src='/static/images/id-card.svg'; this.onerror=null;">
+                            </div>
+                            <p class="card-text flex-grow-1">Upload both front and back sides of your Aadhaar card for identity verification.</p>
+                            <div class="mt-auto">
+                                <a href="/user/aadhaar" class="btn btn-primary btn-lg w-100">
+                                    <i class="bi bi-card-image me-2"></i>Select Aadhaar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-5">
+                    <div class="card h-100 shadow-lg border-0 rounded-3 hover-effect">
+                        <div class="card-header bg-success text-white text-center py-3">
+                            <h3 class="mb-0">PAN Card</h3>
+                        </div>
+                        <div class="card-body d-flex flex-column text-center p-4">
+                            <div class="mb-4">
+                                <img src="/static/images/pan-icon.svg" alt="PAN Icon" class="img-fluid mb-3" style="max-height: 100px;" onerror="this.src='/static/images/credit-card.svg'; this.onerror=null;">
+                            </div>
+                            <p class="card-text flex-grow-1">Upload the front side of your PAN card for identity verification.</p>
+                            <div class="mt-auto">
+                                <a href="/user/pan" class="btn btn-success btn-lg w-100">
+                                    <i class="bi bi-card-image me-2"></i>Select PAN
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5">
+                <a href="/" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-effect {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-effect:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to E-KYC Application{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        min-height: calc(100vh - 56px - 89px); /* Viewport height minus navbar and footer */
+        display: flex;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-primary text-white py-5 mb-3 hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h1 class="display-4 fw-bold mb-3">Electronic Know Your Customer</h1>
+                <p class="lead mb-4">Verify your identity securely and easily with our advanced e-KYC system. Complete the verification process in minutes from anywhere.</p>
+                
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="card bg-white text-primary border-0 shadow">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-person-badge fs-1 mb-2"></i>
+                                <h3 class="h4 mb-3">User</h3>
+                                <p class="mb-3">Get your identity verified</p>
+                                <a href="/user" class="btn btn-primary w-100">
+                                    <i class="bi bi-person-check me-2"></i>Get Verified
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="card bg-white text-secondary border-0 shadow">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-shield-lock fs-1 mb-2"></i>
+                                <h3 class="h4 mb-3">Admin</h3>
+                                <p class="mb-3">Manage verifications</p>
+                                <a href="/admin" class="btn btn-secondary w-100">
+                                    <i class="bi bi-key me-2"></i>Login
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <img src="/static/images/ekyc-hero.svg" alt="E-KYC Illustration" class="img-fluid" style="max-height: 350px;" onerror="this.src='/static/images/id-card.svg'; this.onerror=null;">
+            </div>
+        </div>
+        
+        <!-- Learn More Button - Inside hero section -->
+        <div class="text-center mt-4">
+            <a href="#features" class="btn btn-light btn-lg rounded-pill shadow-lg px-4 d-flex align-items-center justify-content-center mx-auto" style="width: fit-content;">
+                <i class="bi bi-arrow-down-circle-fill text-primary me-2"></i>
+                <span>Learn More</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container py-5" id="features">
+    <div class="text-center mb-5">
+        <h2 class="display-5 fw-bold">Why Choose Our E-KYC Solution</h2>
+        <p class="lead text-muted">Secure, fast, and compliant identity verification</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-shield-check fs-2"></i>
+                    </div>
+                    <h3 class="card-title h4">Secure Verification</h3>
+                    <p class="card-text">Your data is encrypted and protected with industry-standard security measures.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-success bg-gradient text-white rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-lightning-charge fs-2"></i>
+                    </div>
+                    <h3 class="card-title h4">Fast Processing</h3>
+                    <p class="card-text">Complete your verification in minutes with our advanced OCR and face recognition.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-info bg-gradient text-white rounded-circle mb-3 mx-auto" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-check2-circle fs-2"></i>
+                    </div>
+                    <h3 class="card-title h4">Regulatory Compliant</h3>
+                    <p class="card-text">Our solution meets all regulatory requirements for digital KYC verification.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 60, // Offset for navbar
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %} 
