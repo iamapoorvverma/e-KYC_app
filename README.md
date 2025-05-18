@@ -64,7 +64,9 @@ Before you begin, make sure you have:
    pip install -r requirements.txt
    ```
 
-   > 💡 **Pro tip**: The face_recognition library can be tricky to install. On Linux, you might need these packages first:
+   > 💡 **Pro tip**: The face_recognition library can be tricky to install. 
+   > Please refer to https://github.com/ageitgey/face_recognition
+   > On Linux, you might need these packages first:
    > ```bash
    > sudo apt-get update
    > sudo apt-get install -y build-essential cmake
@@ -72,7 +74,6 @@ Before you begin, make sure you have:
    > sudo apt-get install -y libx11-dev libgtk-3-dev
    > sudo apt-get install -y python3-dev
    > ```
-   > On Windows, you might need Visual C++ Build Tools.
 
 4. **Create upload directories**:
    ```bash
